@@ -18,8 +18,10 @@ ERROR_FORMAT="[%s] [ERROR]\n%s\n"
 FATAL_FORMAT="[%s] [FATAL]\n%s\n"
 
 if [[ -z "$APPENDERS" ]]; then
-    APPENDERS=TERMINAL,FILE
+    APPENDERS=TERMINAL
 fi
+
+DEFAULT_LOGGER_LEVEL=LINFO
 
 #*******************************************************************#
 #                          TRACE 在线调试。			    #
@@ -28,7 +30,7 @@ fi
 #*******************************************************************#
 
 function logger_trace {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LTRACE ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$TRACE_FORMAT" "`date`" "$1" >&2
@@ -48,7 +50,7 @@ function logger_trace {
 #*******************************************************************#
 
 function logger_debug {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LDEBUG ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$DEBUG_FORMAT" "`date`" "$1" >&2
@@ -67,7 +69,7 @@ function logger_debug {
 #*******************************************************************#
 
 function logger_info {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LINFO ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$INFO_FORMAT" "`date`" "$1" >&2
@@ -88,7 +90,7 @@ function logger_info {
 #*******************************************************************#
 
 function logger_warn {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LWARN ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$WARN_FORMAT" "`date`" "$1" >&2
@@ -108,7 +110,7 @@ function logger_warn {
 #*******************************************************************#
 
 function logger_error {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LERROR ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$ERROR_FORMAT" "`date`" "$1" >&2
@@ -127,7 +129,7 @@ function logger_error {
 #*******************************************************************#
 
 function logger_fatal {
-    eval LEVEL=\$$LOGGER_LEVEL
+    init_logger_level
     if [[ $LEVEL -le $LFATAL ]]; then
 	if [[ "$APPENDERS" =~ "TERMINAL" ]]; then
 	    printf "$FATAL_FORMAT" "`date`" "$1" >&2
@@ -140,23 +142,33 @@ function logger_fatal {
     fi
 }
 
+function init_logger_level {
+    if [[ -n "$LOGGER_LEVEL" ]]; then
+	eval LEVEL=\$$LOGGER_LEVEL
+    else
+	eval LEVEL=\$$DEFAULT_LOGGER_LEVEL
+    fi
+}
+
 function init_logger {
 
-    if [[ ! -f "$LOGGER_DIRECTORY/$LOGGER_FILE_NAME" ]]; then
+    if [[ "$APPENDERS" =~ "FILE" ]]; then
+	if [[ ! -f "$LOGGER_DIRECTORY/$LOGGER_FILE_NAME" ]]; then
 
-	if [[ -z "$LOGGER_DIRECTORY" ]]; then
-	    LOGGER_DIRECTORY="`pwd`/logs"
-	fi
+	    if [[ -z "$LOGGER_DIRECTORY" ]]; then
+		LOGGER_DIRECTORY="`pwd`/logs"
+	    fi
 
-	if [[ ! -d "$LOGGER_DIRECTORY" ]]; then
-	    mkdir -p "$LOGGER_DIRECTORY"
-	fi
+	    if [[ ! -d "$LOGGER_DIRECTORY" ]]; then
+		mkdir -p "$LOGGER_DIRECTORY"
+	    fi
 
-	if [[ -z "$LOGGER_FILE_NAME" ]]; then
-	    LOGGER_FILE_NAME="`date '+%Y%m%d%H%M%S'`.log"
+	    if [[ -z "$LOGGER_FILE_NAME" ]]; then
+		LOGGER_FILE_NAME="`date '+%Y%m%d%H%M%S'`.log"
+	    fi
+	    LOGGER_FILE_FULL_NAME="$LOGGER_DIRECTORY/$LOGGER_FILE_NAME"
+	    touch "$LOGGER_FILE_FULL_NAME"
 	fi
-	LOGGER_FILE_FULL_NAME="$LOGGER_DIRECTORY/$LOGGER_FILE_NAME"
-	touch "$LOGGER_FILE_FULL_NAME"
     fi
 
 }
